@@ -22,9 +22,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/character/new" element={<CharacterSheetPage />} />
             <Route path="/character/:id" element={<CharacterSheetPage />} />
-            <Route path="/characters" element={
-              <ProtectedRoute><CharacterList /></ProtectedRoute>
-            } />
+            <Route path="/characters" element={<CharacterList />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="*" element={<Navigate to="/" replace />} />

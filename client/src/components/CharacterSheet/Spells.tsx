@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useCharacterStore } from '../../stores/characterStore'
 import type { Spell, Cantrip, Ability } from '../../types/character'
+import type { SpellOption } from '../../services/fiveETools'
 import { formatModifier } from '../../utils/calculations'
 import Card from '../UI/Card'
 import Button from '../UI/Button'
 import Input from '../UI/Input'
+import SpellPicker from '../UI/SpellPicker'
 
 const SPELL_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -12,10 +14,32 @@ export default function Spells() {
   const { data, update } = useCharacterStore()
   const { spellcasting } = data
   const [addingSpell, setAddingSpell] = useState(false)
+  const [spellPickerOpen, setSpellPickerOpen] = useState(false)
   const [newSpell, setNewSpell] = useState({ name: '', level: 1, school: '', description: '' })
 
   const setAbility = (ability: Ability | '') => {
     update(d => { d.spellcasting.spellcastingAbility = ability })
+  }
+
+  const addFromPicker = (s: SpellOption) => {
+    if (s.level === 0) {
+      const cantrip: Cantrip = { id: crypto.randomUUID(), name: s.name, school: s.school, description: '' }
+      update(d => { d.spellcasting.cantrips.push(cantrip) })
+    } else {
+      const spell: Spell = {
+        id: crypto.randomUUID(),
+        name: s.name,
+        level: s.level,
+        school: s.school,
+        castingTime: s.castingTime,
+        range: s.range,
+        components: s.components,
+        duration: s.duration,
+        description: '',
+        prepared: false,
+      }
+      update(d => { d.spellcasting.spellsKnown.push(spell) })
+    }
   }
 
   const addSpell = () => {
@@ -188,8 +212,17 @@ export default function Spells() {
             </div>
           </div>
         ) : (
-          <Button size="sm" variant="secondary" onClick={() => setAddingSpell(true)}>+ Add Spell</Button>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => setSpellPickerOpen(true)}>Browse 5e Spells</Button>
+            <Button size="sm" variant="secondary" onClick={() => setAddingSpell(true)}>+ Add Manually</Button>
+          </div>
         )}
+
+        <SpellPicker
+          open={spellPickerOpen}
+          onClose={() => setSpellPickerOpen(false)}
+          onSelect={addFromPicker}
+        />
       </div>
     </Card>
   )

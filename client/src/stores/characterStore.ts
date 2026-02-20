@@ -61,7 +61,9 @@ export const useCharacterStore = create<CharacterState>((set) => ({
 
   loadNew: () => {
     const id = crypto.randomUUID()
-    set({ id, cloudId: null, data: structuredClone(DEFAULT_CHARACTER_DATA), isDirty: false })
+    const data = structuredClone(DEFAULT_CHARACTER_DATA)
+    saveCharacter({ id, name: 'Unnamed', data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
+    set({ id, cloudId: null, data, isDirty: false })
   },
 
   loadLocal: (id) => {

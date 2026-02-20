@@ -15,6 +15,9 @@ export default function Home() {
         <Link to="/character/new">
           <Button size="lg">Create New Character</Button>
         </Link>
+        <Link to="/characters">
+          <Button size="lg" variant="secondary">My Characters</Button>
+        </Link>
         <Link to="/login">
           <Button size="lg" variant="secondary">Login to Sync</Button>
         </Link>

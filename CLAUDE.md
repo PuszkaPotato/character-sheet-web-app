@@ -106,7 +106,7 @@ server/DndCharacterSheet.API/
 
 **Auto-calculations in the store**: All derived values (ability modifiers, skill bonuses, proficiency bonus, spell DC/attack) are computed in `characterStore.ts` whenever source values change. They are never stored, always derived. Pure calculation functions live in `utils/calculations.ts`.
 
-**5e.tools data**: Races, classes, spells, and backgrounds come from 5e.tools' public JSON data (GitHub: `5etools-mirror-2/5etools-mirror-2`). Fetched once and cached in IndexedDB. Do not bundle this data — fetch at runtime.
+**5e.tools data**: Races, classes, spells, and backgrounds come from 5e.tools' public JSON data (GitHub: `5etools-mirror-3/5etools-src`, `main` branch). Fetched lazily on first focus and kept in a module-level `Map` for the session. Do not bundle this data — fetch at runtime. Filter `edition === 'one'` entries to exclude 2024 reprints (XPHB etc.) and deduplicate by name.
 
 **JWT stored in localStorage**: Token stored in `localStorage` as `authToken`, added to all requests via Axios request interceptor. Auth store rehydrates from localStorage on app load.
 
@@ -117,7 +117,7 @@ server/DndCharacterSheet.API/
 - `/` — Home/landing page
 - `/character/new` — Create new character
 - `/character/:id` — View/edit character sheet
-- `/characters` — Character list (protected, requires auth)
+- `/characters` — Character list (no auth required; cloud section hidden when not logged in)
 - `/login`, `/register` — Auth pages
 
 ## D&D 5e Calculations
