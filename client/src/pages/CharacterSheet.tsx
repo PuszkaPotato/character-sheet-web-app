@@ -1,0 +1,166 @@
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useCharacterStore } from '../stores/characterStore'
+import { useAuthStore } from '../stores/authStore'
+import { createCharacter, updateCharacter } from '../services/characters'
+import { exportCharacterJson, importCharacterJson } from '../services/localStorage'
+import { exportCharacterPdf } from '../utils/pdfExport'
+import AbilityScores from '../components/CharacterSheet/AbilityScores'
+import CombatStats from '../components/CharacterSheet/CombatStats'
+import Skills from '../components/CharacterSheet/Skills'
+import Equipment from '../components/CharacterSheet/Equipment'
+import Spells from '../components/CharacterSheet/Spells'
+import Features from '../components/CharacterSheet/Features'
+import Notes from '../components/CharacterSheet/Notes'
+import Input from '../components/UI/Input'
+import Button from '../components/UI/Button'
+
+const TABS = ['Combat', 'Skills', 'Equipment', 'Spells', 'Features', 'Notes'] as const
+type Tab = typeof TABS[number]
+
+export default function CharacterSheetPage() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { data, id: storeId, cloudId, isDirty, loadNew, loadLocal, setField, setCloudId, markSaved } = useCharacterStore()
+  const { isAuthenticated } = useAuthStore()
+  const [tab, setTab] = useState<Tab>('Combat')
+  const [cloudSaving, setCloudSaving] = useState(false)
+  const [cloudSaveMsg, setCloudSaveMsg] = useState('')
+
+  useEffect(() => {
+    if (id === 'new') {
+      loadNew()
+    } else if (id) {
+      const loaded = loadLocal(id)
+      if (!loaded) navigate('/character/new')
+    }
+  }, [id])
+
+  const handleBasicInfo = (field: string, value: string | number) => {
+    setField('basicInfo', { ...data.basicInfo, [field]: value })
+  }
+
+  const handleCloudSave = async () => {
+    if (!storeId) return
+    setCloudSaving(true)
+    setCloudSaveMsg('')
+    try {
+      const payload = { name: data.basicInfo.name || 'Unnamed', data: JSON.stringify(data) }
+      if (cloudId) {
+        await updateCharacter(cloudId, payload)
+      } else {
+        const res = await createCharacter(payload)
+        setCloudId(res.id)
+      }
+      markSaved()
+      setCloudSaveMsg('Saved to cloud!')
+      setTimeout(() => setCloudSaveMsg(''), 3000)
+    } catch {
+      setCloudSaveMsg('Cloud save failed.')
+    } finally {
+      setCloudSaving(false)
+    }
+  }
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    importCharacterJson(file).then(char => {
+      setField('basicInfo', char.data.basicInfo)
+      navigate(`/character/${char.id}`)
+    }).catch(err => alert(err.message))
+    e.target.value = ''
+  }
+
+  return (
+    <main className="mx-auto max-w-7xl px-4 py-6">
+      {/* Header bar */}
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="flex-1 min-w-[200px]">
+          <input
+            value={data.basicInfo.name}
+            onChange={e => handleBasicInfo('name', e.target.value)}
+            placeholder="Character Name"
+            className="text-2xl font-bold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-red-500 focus:outline-none w-full text-gray-900 dark:text-gray-100 pb-1"
+          />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {isDirty && <span className="text-xs text-gray-400 self-center">Unsaved changes</span>}
+          {cloudSaveMsg && <span className="text-xs text-green-600 dark:text-green-400 self-center">{cloudSaveMsg}</span>}
+          <Button size="sm" variant="secondary" onClick={() => exportCharacterJson({ id: storeId!, name: data.basicInfo.name || 'character', data, createdAt: '', updatedAt: '' })}>
+            Export JSON
+          </Button>
+          <label className="cursor-pointer inline-flex">
+            <span className="inline-flex items-center justify-center gap-2 rounded border font-medium transition-colors text-sm px-4 py-2 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 cursor-pointer">
+              Import JSON
+            </span>
+            <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+          </label>
+          <Button size="sm" variant="secondary" onClick={() => exportCharacterPdf(data, data.basicInfo.name || 'Character')}>
+            Export PDF
+          </Button>
+          {isAuthenticated && (
+            <Button size="sm" onClick={handleCloudSave} loading={cloudSaving}>
+              {cloudId ? 'Update Cloud' : 'Save to Cloud'}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Basic Info */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+        {[
+          { label: 'Race', field: 'race', type: 'text' },
+          { label: 'Class', field: 'class', type: 'text' },
+          { label: 'Subclass', field: 'subclass', type: 'text' },
+          { label: 'Level', field: 'level', type: 'number' },
+          { label: 'Background', field: 'background', type: 'text' },
+          { label: 'Alignment', field: 'alignment', type: 'text' },
+          { label: 'XP', field: 'experiencePoints', type: 'number' },
+        ].map(({ label, field, type }) => (
+          <Input
+            key={field}
+            label={label}
+            type={type}
+            value={(data.basicInfo as Record<string, unknown>)[field] as string}
+            onChange={e => handleBasicInfo(field, type === 'number' ? parseInt(e.target.value) || 0 : e.target.value)}
+          />
+        ))}
+      </div>
+
+      {/* Ability Scores always visible */}
+      <div className="mb-6">
+        <AbilityScores />
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200 dark:border-gray-700 mb-4">
+        <nav className="flex gap-0 overflow-x-auto">
+          {TABS.map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                tab === t
+                  ? 'border-red-600 text-red-600 dark:text-red-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Tab content */}
+      <div>
+        {tab === 'Combat' && <CombatStats />}
+        {tab === 'Skills' && <Skills />}
+        {tab === 'Equipment' && <Equipment />}
+        {tab === 'Spells' && <Spells />}
+        {tab === 'Features' && <Features />}
+        {tab === 'Notes' && <Notes />}
+      </div>
+    </main>
+  )
+}
