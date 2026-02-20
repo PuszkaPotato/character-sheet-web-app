@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useCharacterStore } from '../stores/characterStore'
 import { useAuthStore } from '../stores/authStore'
 import { createCharacter, updateCharacter } from '../services/characters'
-import { exportCharacterJson, importCharacterJson } from '../services/localStorage'
+import { exportCharacterJson, importCharacterJson, saveCharacter } from '../services/localStorage'
 import { exportCharacterPdf } from '../utils/pdfExport'
 import AbilityScores from '../components/CharacterSheet/AbilityScores'
 import CombatStats from '../components/CharacterSheet/CombatStats'
@@ -31,10 +31,15 @@ export default function CharacterSheetPage() {
     if (id === 'new') {
       loadNew()
     } else if (id) {
+      // If the store already has this character loaded (e.g. navigated from CharacterList),
+      // skip the localStorage lookup to avoid clobbering it
+      const { id: currentId, cloudId: currentCloudId } = useCharacterStore.getState()
+      if (currentId === id || currentCloudId === id) return
+
       const loaded = loadLocal(id)
       if (!loaded) navigate('/character/new')
     }
-  }, [id])
+  }, [id, loadNew, loadLocal, navigate])
 
   const handleBasicInfo = (field: string, value: string | number) => {
     setField('basicInfo', { ...data.basicInfo, [field]: value })
@@ -66,7 +71,8 @@ export default function CharacterSheetPage() {
     const file = e.target.files?.[0]
     if (!file) return
     importCharacterJson(file).then(char => {
-      setField('basicInfo', char.data.basicInfo)
+      saveCharacter(char)
+      loadLocal(char.id)
       navigate(`/character/${char.id}`)
     }).catch(err => alert(err.message))
     e.target.value = ''
@@ -87,7 +93,10 @@ export default function CharacterSheetPage() {
         <div className="flex gap-2 flex-wrap">
           {isDirty && <span className="text-xs text-gray-400 self-center">Unsaved changes</span>}
           {cloudSaveMsg && <span className="text-xs text-green-600 dark:text-green-400 self-center">{cloudSaveMsg}</span>}
-          <Button size="sm" variant="secondary" onClick={() => exportCharacterJson({ id: storeId!, name: data.basicInfo.name || 'character', data, createdAt: '', updatedAt: '' })}>
+          <Button size="sm" variant="secondary" onClick={() => {
+            if (!storeId) return
+            exportCharacterJson({ id: storeId, name: data.basicInfo.name || 'character', data, createdAt: '', updatedAt: '' })
+          }}>
             Export JSON
           </Button>
           <label className="cursor-pointer inline-flex">

@@ -32,7 +32,10 @@ export default function CharacterList() {
 
   const openCloudChar = (char: CharacterDto) => {
     loadFromCloud(char)
-    navigate(`/character/${char.id}`)
+    // loadFromCloud generates a new local id — navigate to that, not the cloud id,
+    // so CharacterSheet can find it in the store without a localStorage lookup
+    const localId = useCharacterStore.getState().id
+    navigate(`/character/${localId}`)
   }
 
   const openLocalChar = (char: LocalCharacter) => {

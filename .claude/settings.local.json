@@ -6,7 +6,10 @@
       "Bash(dotnet remove package:*)",
       "Bash(npm install:*)",
       "Bash(npx tailwindcss:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(dotnet ef migrations:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
