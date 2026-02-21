@@ -1,50 +1,30 @@
 import { useCharacterStore } from '../../stores/characterStore'
 import { formatModifier } from '../../utils/calculations'
 import Card from '../UI/Card'
+import NumberStepper from '../UI/NumberStepper'
 
 const inputCls = 'w-14 text-center rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-1 text-base font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden'
-const stepBtn = 'w-6 h-8 flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-bold text-sm select-none'
 
 export default function CombatStats() {
   const { data, update } = useCharacterStore()
   const { combat } = data
 
   const set = (field: string, value: number) => {
-    update(d => {
-      (d.combat as unknown as Record<string, number>)[field] = value
-    })
+    update(d => { (d.combat as unknown as Record<string, number>)[field] = value })
   }
 
-  // Plain number input (for stats that rarely change mid-session)
   const stat = (label: string, value: string | number, onChange: (v: string) => void, format?: string) => (
     <div className="flex flex-col items-center gap-1">
       <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 text-center">{label}</span>
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={inputCls}
-        aria-label={label}
-      />
+      <input type="number" value={value} onChange={e => onChange(e.target.value)} className={inputCls} aria-label={label} />
       {format && <span className="text-xs text-gray-400">{format}</span>}
     </div>
   )
 
-  // +/- stepper (for HP fields, changed constantly during play)
   const hpStat = (label: string, field: string, value: number) => (
     <div className="flex flex-col items-center gap-1">
       <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 text-center">{label}</span>
-      <div className="flex items-center gap-0.5">
-        <button onClick={() => set(field, value - 1)} className={stepBtn} aria-label={`Decrease ${label}`}>−</button>
-        <input
-          type="number"
-          value={value}
-          onChange={(e) => set(field, parseInt(e.target.value) || 0)}
-          className={inputCls}
-          aria-label={label}
-        />
-        <button onClick={() => set(field, value + 1)} className={stepBtn} aria-label={`Increase ${label}`}>+</button>
-      </div>
+      <NumberStepper value={value} onChange={v => set(field, v)} label={label} />
     </div>
   )
 

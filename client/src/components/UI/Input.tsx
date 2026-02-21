@@ -7,6 +7,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export default function Input({ label, error, className = '', id, ...props }: InputProps) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
+  const noSpinners = props.type === 'number' ? '[appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden' : ''
   return (
     <div className="flex flex-col gap-1">
       {label && (
@@ -16,7 +17,7 @@ export default function Input({ label, error, className = '', id, ...props }: In
       )}
       <input
         id={inputId}
-        className={`w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent ${error ? 'border-red-500' : ''} ${className}`}
+        className={`w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent ${error ? 'border-red-500' : ''} ${noSpinners} ${className}`}
         {...props}
       />
       {error && <span className="text-xs text-red-500">{error}</span>}

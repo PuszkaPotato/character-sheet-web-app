@@ -4,6 +4,7 @@ import type { EquipmentItem } from '../../types/character'
 import Card from '../UI/Card'
 import Button from '../UI/Button'
 import Input from '../UI/Input'
+import NumberStepper from '../UI/NumberStepper'
 
 export default function Equipment() {
   const { data, update } = useCharacterStore()
@@ -45,13 +46,11 @@ export default function Equipment() {
           {(['copper', 'silver', 'electrum', 'gold', 'platinum'] as const).map(c => (
             <div key={c} className="flex flex-col items-center gap-1">
               <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">{c[0].toUpperCase()}P</span>
-              <input
-                type="number"
-                min={0}
+              <NumberStepper
                 value={currency[c]}
-                onChange={(e) => setCurrency(c, e.target.value)}
-                className="w-full text-center rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                aria-label={c}
+                onChange={v => { if (v >= 0) update(d => { d.currency[c] = v }) }}
+                min={0}
+                label={c}
               />
             </div>
           ))}

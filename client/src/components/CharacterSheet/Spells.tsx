@@ -6,6 +6,7 @@ import { formatModifier } from '../../utils/calculations'
 import Card from '../UI/Card'
 import Button from '../UI/Button'
 import Input from '../UI/Input'
+import NumberStepper from '../UI/NumberStepper'
 import SpellPicker from '../UI/SpellPicker'
 
 const SPELL_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -135,22 +136,10 @@ export default function Spells() {
               return (
                 <div key={lvl} className="flex flex-col items-center gap-1">
                   <span className="text-xs text-gray-400">Lvl {lvl}</span>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number" min={0} max={99}
-                      value={slot.used}
-                      onChange={e => setSlotUsed(String(lvl), parseInt(e.target.value) || 0)}
-                      className="w-8 text-center rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
-                      aria-label={`Level ${lvl} slots used`}
-                    />
-                    <span className="text-gray-400">/</span>
-                    <input
-                      type="number" min={0} max={99}
-                      value={slot.max}
-                      onChange={e => setSlotMax(String(lvl), parseInt(e.target.value) || 0)}
-                      className="w-8 text-center rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
-                      aria-label={`Level ${lvl} slots max`}
-                    />
+                  <div className="flex items-center gap-0.5">
+                    <NumberStepper size="sm" value={slot.used} onChange={v => setSlotUsed(String(lvl), v)} min={0} label={`Level ${lvl} used`} />
+                    <span className="text-gray-400 text-xs px-0.5">/</span>
+                    <NumberStepper size="sm" value={slot.max} onChange={v => setSlotMax(String(lvl), v)} min={0} label={`Level ${lvl} max`} />
                   </div>
                 </div>
               )
@@ -202,7 +191,7 @@ export default function Spells() {
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Level (0=cantrip)</span>
                 <input type="number" min={0} max={9} value={newSpell.level} onChange={e => setNewSpell(p => ({ ...p, level: parseInt(e.target.value) || 0 }))}
-                  className="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+                  className="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden" />
               </div>
             </div>
             <Input label="School (optional)" value={newSpell.school} onChange={e => setNewSpell(p => ({ ...p, school: e.target.value }))} />
