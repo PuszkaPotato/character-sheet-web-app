@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useAuthStore } from '../stores/authStore'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api',
@@ -17,8 +18,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('authToken')
-      localStorage.removeItem('authUser')
+      // Properly log out — clears localStorage AND updates the store so the UI reflects reality
+      useAuthStore.getState().logout()
     }
     return Promise.reject(error)
   }

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useCharacterStore } from '../stores/characterStore'
 import { useAuthStore } from '../stores/authStore'
 import { createCharacter, updateCharacter } from '../services/characters'
-import { exportCharacterJson, importCharacterJson, saveCharacter } from '../services/localStorage'
+import { importCharacterJson, saveCharacter } from '../services/localStorage'
 import { exportCharacterPdf } from '../utils/pdfExport'
 import { getRaces, getClasses, getBackgrounds, type RaceOption, type ClassOption, type BackgroundOption } from '../services/fiveETools'
 import AbilityScores from '../components/CharacterSheet/AbilityScores'
@@ -77,7 +77,10 @@ export default function CharacterSheetPage() {
   }
 
   const handleCloudSave = async () => {
-    if (!storeId) return
+    if (!storeId) {
+      console.error('Cloud save failed: no character loaded (storeId is null)')
+      return
+    }
     setCloudSaving(true)
     setCloudSaveStatus('idle')
     try {
@@ -91,8 +94,9 @@ export default function CharacterSheetPage() {
       markSaved()
       setCloudSaveStatus('saved')
       setTimeout(() => setCloudSaveStatus('idle'), 4000)
-    } catch (err) {
-      console.error('Cloud save failed:', err)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('Cloud save failed:', msg, err)
       setCloudSaveStatus('error')
     } finally {
       setCloudSaving(false)
@@ -129,14 +133,20 @@ export default function CharacterSheetPage() {
               {isAuthenticated && isDirty && ' · not synced'}
             </span>
           )}
-          <Button size="sm" variant="secondary" onClick={() => {
-            if (!storeId) return
-            exportCharacterJson({ id: storeId, name: data.basicInfo.name || 'character', data, createdAt: '', updatedAt: '' })
-            setExported(true)
-            setTimeout(() => setExported(false), 2000)
-          }}>
+          <a
+            href="#"
+            className="inline-flex items-center justify-center gap-2 rounded border font-medium transition-colors text-sm px-2.5 py-1 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+            onClick={(e) => {
+              if (!storeId) { e.preventDefault(); console.error('Export failed: no character loaded'); return }
+              const char = { id: storeId, name: data.basicInfo.name || 'character', data, createdAt: '', updatedAt: '' }
+              e.currentTarget.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(char, null, 2))
+              e.currentTarget.download = (char.name || 'character').replace(/\s+/g, '_') + '.json'
+              setExported(true)
+              setTimeout(() => setExported(false), 2000)
+            }}
+          >
             {exported ? 'Downloaded ✓' : 'Export JSON'}
-          </Button>
+          </a>
           <label className="cursor-pointer inline-flex">
             <span className="inline-flex items-center justify-center gap-2 rounded border font-medium transition-colors text-sm px-2.5 py-1 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 cursor-pointer">
               Import JSON
