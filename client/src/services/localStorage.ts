@@ -43,15 +43,12 @@ function getCharacterIds(): string[] {
 }
 
 export function exportCharacterJson(character: LocalCharacter): void {
-  const blob = new Blob([JSON.stringify(character, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url
+  a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(character, null, 2))
   a.download = `${(character.name || 'character').replace(/\s+/g, '_')}.json`
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
-  setTimeout(() => URL.revokeObjectURL(url), 100)
 }
 
 export function importCharacterJson(file: File): Promise<LocalCharacter> {

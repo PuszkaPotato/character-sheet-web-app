@@ -23,11 +23,11 @@ type Tab = typeof TABS[number]
 export default function CharacterSheetPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { data, id: storeId, cloudId, isDirty, loadNew, loadLocal, setField, setCloudId, markSaved } = useCharacterStore()
+  const { data, id: storeId, cloudId, isDirty, lastLocalSave, loadNew, loadLocal, setField, setCloudId, markSaved } = useCharacterStore()
   const { isAuthenticated } = useAuthStore()
   const [tab, setTab] = useState<Tab>('Combat')
   const [cloudSaving, setCloudSaving] = useState(false)
-  const [cloudSaveMsg, setCloudSaveMsg] = useState('')
+  const [cloudSaveStatus, setCloudSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle')
 
   // 5e.tools data (loaded lazily on first focus)
   const [races, setRaces] = useState<RaceOption[]>([])
@@ -78,7 +78,7 @@ export default function CharacterSheetPage() {
   const handleCloudSave = async () => {
     if (!storeId) return
     setCloudSaving(true)
-    setCloudSaveMsg('')
+    setCloudSaveStatus('idle')
     try {
       const payload = { name: data.basicInfo.name || 'Unnamed', data: JSON.stringify(data) }
       if (cloudId) {
@@ -88,11 +88,11 @@ export default function CharacterSheetPage() {
         setCloudId(res.id)
       }
       markSaved()
-      setCloudSaveMsg('saved')
-      setTimeout(() => setCloudSaveMsg(''), 5000)
+      setCloudSaveStatus('saved')
+      setTimeout(() => setCloudSaveStatus('idle'), 4000)
     } catch (err) {
       console.error('Cloud save failed:', err)
-      setCloudSaveMsg('error')
+      setCloudSaveStatus('error')
     } finally {
       setCloudSaving(false)
     }
@@ -121,14 +121,11 @@ export default function CharacterSheetPage() {
             className="text-2xl font-bold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:border-red-500 focus:outline-none w-full text-gray-900 dark:text-gray-100 pb-1"
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
-          {isDirty && <span className="text-xs text-gray-400 self-center">Unsaved changes</span>}
-          {cloudSaveMsg === 'saved' && (
-            <span className="text-xs font-medium text-green-600 dark:text-green-400 self-center">Saved to cloud ✓</span>
-          )}
-          {cloudSaveMsg === 'error' && (
-            <span className="text-xs font-medium text-red-600 dark:text-red-400 self-center">
-              Cloud save failed — check console
+        <div className="flex gap-2 flex-wrap items-center">
+          {lastLocalSave && (
+            <span className="text-xs text-gray-400">
+              Saved {lastLocalSave.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {isAuthenticated && isDirty && ' · not synced'}
             </span>
           )}
           <Button size="sm" variant="secondary" onClick={() => {
@@ -138,7 +135,7 @@ export default function CharacterSheetPage() {
             Export JSON
           </Button>
           <label className="cursor-pointer inline-flex">
-            <span className="inline-flex items-center justify-center gap-2 rounded border font-medium transition-colors text-sm px-4 py-2 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 cursor-pointer">
+            <span className="inline-flex items-center justify-center gap-2 rounded border font-medium transition-colors text-sm px-2.5 py-1 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 cursor-pointer">
               Import JSON
             </span>
             <input type="file" accept=".json" className="hidden" onChange={handleImport} />
@@ -147,8 +144,16 @@ export default function CharacterSheetPage() {
             Export PDF
           </Button>
           {isAuthenticated && (
-            <Button size="sm" onClick={handleCloudSave} loading={cloudSaving}>
-              {cloudId ? 'Update Cloud' : 'Save to Cloud'}
+            <Button
+              size="sm"
+              onClick={handleCloudSave}
+              loading={cloudSaving}
+              className={
+                cloudSaveStatus === 'saved' ? '!bg-green-600 !border-green-600 hover:!bg-green-700' :
+                cloudSaveStatus === 'error' ? '!bg-red-700 !border-red-700' : ''
+              }
+            >
+              {cloudSaveStatus === 'saved' ? 'Saved ✓' : cloudSaveStatus === 'error' ? 'Failed — retry?' : cloudId ? 'Update Cloud' : 'Save to Cloud'}
             </Button>
           )}
         </div>

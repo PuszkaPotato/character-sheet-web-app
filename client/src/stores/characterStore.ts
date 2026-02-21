@@ -9,9 +9,10 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null
 
 interface CharacterState {
   id: string | null
-  cloudId: string | null // backend id if synced
+  cloudId: string | null
   data: CharacterData
   isDirty: boolean
+  lastLocalSave: Date | null
 
   loadNew: () => void
   loadLocal: (id: string) => boolean
@@ -26,20 +27,17 @@ function recalculate(data: CharacterData): CharacterData {
   const prof = proficiencyBonus(data.basicInfo.level)
   data.proficiencyBonus = prof
 
-  // Recalc spell stats if spellcasting ability set
   if (data.spellcasting.spellcastingAbility) {
     const abilityScore = data.abilities[data.spellcasting.spellcastingAbility]
     data.spellcasting.spellSaveDC = spellSaveDC(abilityScore, prof)
     data.spellcasting.spellAttackBonus = spellAttackBonus(abilityScore, prof)
   }
 
-  // Recalc initiative from dex modifier
   data.combat.initiative = abilityModifier(data.abilities.dexterity)
-
   return data
 }
 
-function scheduleSave(id: string, data: CharacterData, name: string) {
+function scheduleSave(id: string, data: CharacterData, name: string, onSaved: () => void) {
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
     const character: LocalCharacter = {
@@ -50,6 +48,7 @@ function scheduleSave(id: string, data: CharacterData, name: string) {
       updatedAt: new Date().toISOString(),
     }
     saveCharacter(character)
+    onSaved()
   }, 500)
 }
 
@@ -58,25 +57,26 @@ export const useCharacterStore = create<CharacterState>((set) => ({
   cloudId: null,
   data: structuredClone(DEFAULT_CHARACTER_DATA),
   isDirty: false,
+  lastLocalSave: null,
 
   loadNew: () => {
     const id = crypto.randomUUID()
     const data = structuredClone(DEFAULT_CHARACTER_DATA)
     saveCharacter({ id, name: 'Unnamed', data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
-    set({ id, cloudId: null, data, isDirty: false })
+    set({ id, cloudId: null, data, isDirty: false, lastLocalSave: new Date() })
   },
 
   loadLocal: (id) => {
     const char = loadCharacter(id)
     if (!char) return false
-    set({ id, cloudId: null, data: char.data, isDirty: false })
+    set({ id, cloudId: null, data: char.data, isDirty: false, lastLocalSave: null })
     return true
   },
 
   loadFromCloud: (cloudChar) => {
     const data: CharacterData = JSON.parse(cloudChar.data)
     const localId = crypto.randomUUID()
-    set({ id: localId, cloudId: cloudChar.id, data, isDirty: false })
+    set({ id: localId, cloudId: cloudChar.id, data, isDirty: false, lastLocalSave: null })
   },
 
   update: (updater) => {
@@ -85,7 +85,9 @@ export const useCharacterStore = create<CharacterState>((set) => ({
       updater(next)
       recalculate(next)
       if (state.id) {
-        scheduleSave(state.id, next, next.basicInfo.name || 'Unnamed')
+        scheduleSave(state.id, next, next.basicInfo.name || 'Unnamed', () =>
+          set({ lastLocalSave: new Date() })
+        )
       }
       return { data: next, isDirty: true }
     })
@@ -96,7 +98,9 @@ export const useCharacterStore = create<CharacterState>((set) => ({
       const next = { ...state.data, [key]: value }
       recalculate(next)
       if (state.id) {
-        scheduleSave(state.id, next, next.basicInfo.name || 'Unnamed')
+        scheduleSave(state.id, next, next.basicInfo.name || 'Unnamed', () =>
+          set({ lastLocalSave: new Date() })
+        )
       }
       return { data: next, isDirty: true }
     })
