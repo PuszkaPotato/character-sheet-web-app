@@ -88,10 +88,11 @@ export default function CharacterSheetPage() {
         setCloudId(res.id)
       }
       markSaved()
-      setCloudSaveMsg('Saved to cloud!')
-      setTimeout(() => setCloudSaveMsg(''), 3000)
-    } catch {
-      setCloudSaveMsg('Cloud save failed.')
+      setCloudSaveMsg('saved')
+      setTimeout(() => setCloudSaveMsg(''), 5000)
+    } catch (err) {
+      console.error('Cloud save failed:', err)
+      setCloudSaveMsg('error')
     } finally {
       setCloudSaving(false)
     }
@@ -122,7 +123,14 @@ export default function CharacterSheetPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           {isDirty && <span className="text-xs text-gray-400 self-center">Unsaved changes</span>}
-          {cloudSaveMsg && <span className="text-xs text-green-600 dark:text-green-400 self-center">{cloudSaveMsg}</span>}
+          {cloudSaveMsg === 'saved' && (
+            <span className="text-xs font-medium text-green-600 dark:text-green-400 self-center">Saved to cloud ✓</span>
+          )}
+          {cloudSaveMsg === 'error' && (
+            <span className="text-xs font-medium text-red-600 dark:text-red-400 self-center">
+              Cloud save failed — check console
+            </span>
+          )}
           <Button size="sm" variant="secondary" onClick={() => {
             if (!storeId) return
             exportCharacterJson({ id: storeId, name: data.basicInfo.name || 'character', data, createdAt: '', updatedAt: '' })

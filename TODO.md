@@ -12,11 +12,11 @@ Walk through the complete flow end-to-end with both servers running:
 - Register new account
 - Login
 - Create a character
-- Save to cloud
+- Save to cloud ← fixed feedback (was silent)
 - Reload the page
 - Verify character appears in the cloud list and data is intact
 - Verify localStorage character also survives reload
-- Test JSON export/import
+- Test JSON export/import ← fixed download (was broken)
 - Test PDF export
 
 ### 2. Deployment
@@ -31,6 +31,10 @@ Deploy to production. See `docs/DEPLOYMENT.md` for full instructions.
 ### Auto-populate hit die on class select
 When a class is chosen via the Combobox, optionally set `combat.hitDice.total`
 (e.g. Fighter → "1d10", Wizard → "1d6"). Low priority.
+
+### PDF export improvements
+Currently exports a very basic unstyled PDF. Needs a proper layout that resembles
+an actual character sheet — sections, labels, ability score boxes, etc. (`utils/pdfExport.ts`)
 
 ## Done
 

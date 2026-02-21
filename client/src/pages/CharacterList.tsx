@@ -17,15 +17,17 @@ export default function CharacterList() {
   const [cloudChars, setCloudChars] = useState<CharacterDto[]>([])
   const [localChars, setLocalChars] = useState<LocalCharacter[]>([])
   const [loading, setLoading] = useState(false)
+  const [cloudError, setCloudError] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; type: 'cloud' | 'local' } | null>(null)
 
   useEffect(() => {
     setLocalChars(loadAllCharacters())
     if (isAuthenticated) {
       setLoading(true)
+      setCloudError(false)
       getCharacters()
         .then(setCloudChars)
-        .catch(() => {})
+        .catch((err) => { console.error('Failed to load cloud characters:', err); setCloudError(true) })
         .finally(() => setLoading(false))
     }
   }, [isAuthenticated])
@@ -77,7 +79,8 @@ export default function CharacterList() {
         <section className="mb-8">
           <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3">Cloud Characters</h2>
           {loading && <p className="text-sm text-gray-400">Loading...</p>}
-          {!loading && cloudChars.length === 0 && (
+          {cloudError && <p className="text-sm text-red-500">Failed to load cloud characters — check that you're logged in and the server is running.</p>}
+          {!loading && !cloudError && cloudChars.length === 0 && (
             <p className="text-sm text-gray-400 italic">No cloud characters yet. Create one and click "Save to Cloud".</p>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

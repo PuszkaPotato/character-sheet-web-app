@@ -48,8 +48,10 @@ export function exportCharacterJson(character: LocalCharacter): void {
   const a = document.createElement('a')
   a.href = url
   a.download = `${(character.name || 'character').replace(/\s+/g, '_')}.json`
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 100)
 }
 
 export function importCharacterJson(file: File): Promise<LocalCharacter> {
