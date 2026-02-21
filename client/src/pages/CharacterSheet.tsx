@@ -28,6 +28,7 @@ export default function CharacterSheetPage() {
   const [tab, setTab] = useState<Tab>('Combat')
   const [cloudSaving, setCloudSaving] = useState(false)
   const [cloudSaveStatus, setCloudSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle')
+  const [exported, setExported] = useState(false)
 
   // 5e.tools data (loaded lazily on first focus)
   const [races, setRaces] = useState<RaceOption[]>([])
@@ -131,8 +132,10 @@ export default function CharacterSheetPage() {
           <Button size="sm" variant="secondary" onClick={() => {
             if (!storeId) return
             exportCharacterJson({ id: storeId, name: data.basicInfo.name || 'character', data, createdAt: '', updatedAt: '' })
+            setExported(true)
+            setTimeout(() => setExported(false), 2000)
           }}>
-            Export JSON
+            {exported ? 'Downloaded ✓' : 'Export JSON'}
           </Button>
           <label className="cursor-pointer inline-flex">
             <span className="inline-flex items-center justify-center gap-2 rounded border font-medium transition-colors text-sm px-2.5 py-1 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 cursor-pointer">
