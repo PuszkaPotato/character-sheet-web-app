@@ -20,7 +20,6 @@ export default function App() {
         <div className="flex-1">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/character/new" element={<CharacterSheetPage />} />
             <Route path="/character/:id" element={<CharacterSheetPage />} />
             <Route path="/characters" element={<CharacterList />} />
             <Route path="/login" element={<Login />} />
